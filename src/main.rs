@@ -1,4 +1,5 @@
-use ratatui::{DefaultTerminal, Frame};
+use checkers_tui::{state::State, ui::render};
+use ratatui::DefaultTerminal;
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
@@ -7,14 +8,9 @@ fn main() -> color_eyre::Result<()> {
 }
 
 fn app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
-    loop {
-        terminal.draw(render)?;
-        if crossterm::event::read()?.is_key_press() {
-            break Ok(());
-        }
-    }
-}
+    let state = State {};
 
-fn render(frame: &mut Frame) {
-    frame.render_widget("hello world", frame.area());
+    loop {
+        terminal.draw(|frame| render(frame, &state))?;
+    }
 }
