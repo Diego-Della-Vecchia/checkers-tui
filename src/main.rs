@@ -8,9 +8,9 @@ fn main() -> color_eyre::Result<()> {
 }
 
 fn app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
-    let state = State {};
+    let mut state = State {};
 
     loop {
-        terminal.draw(|frame| render(frame, &state))?;
+        terminal.draw(|frame| render(frame, &mut state))?;
     }
 }
