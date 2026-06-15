@@ -1,5 +1,3 @@
-use std::fmt::Alignment;
-
 use crate::state::State;
 use ratatui::{
     Frame,
