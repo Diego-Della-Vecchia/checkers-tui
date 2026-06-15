@@ -10,7 +10,7 @@ fn main() -> color_eyre::Result<()> {
 }
 
 fn app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
-    let mut state = State {};
+    let mut state = State::new();
 
     loop {
         terminal.draw(|frame| render(frame, &mut state))?;
