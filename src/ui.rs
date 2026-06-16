@@ -1,4 +1,6 @@
-use crate::state::State;
+use core::fmt;
+
+use crate::state::{PlayerTurn, State};
 use ratatui::{
     Frame,
     layout::{Constraint, HorizontalAlignment, Layout, Rect},
@@ -55,6 +57,19 @@ fn render_board(frame: &mut Frame, area: Rect, state: &mut State) {
     frame.render_widget(container_block, container);
 }
 
+fn render_footer(frame: &mut Frame, area: Rect, state: &State) {
+    let text = match state.current_turn {
+        PlayerTurn::PlayerOne => String::from("Current turn: Player one"),
+        PlayerTurn::PlayerTwo => String::from("Current turn: Player two"),
+    };
+
+    let paragraph = Paragraph::new(text)
+        .style(Style::new().red())
+        .alignment(HorizontalAlignment::Center);
+
+    frame.render_widget(paragraph, area);
+}
+
 pub fn render(frame: &mut Frame, state: &mut State) {
     let layout = Layout::default()
         .constraints([
@@ -70,4 +85,5 @@ pub fn render(frame: &mut Frame, state: &mut State) {
 
     render_header(frame, header_area);
     render_board(frame, board_area, state);
+    render_footer(frame, footer_area, state);
 }
