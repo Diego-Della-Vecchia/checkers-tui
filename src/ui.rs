@@ -1,10 +1,8 @@
-use core::fmt;
-
 use crate::state::{PlayerTurn, State};
 use ratatui::{
     Frame,
     layout::{Constraint, HorizontalAlignment, Layout, Rect},
-    style::{Color, Style},
+    style::{Color, Style, Stylize},
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph},
 };
@@ -44,7 +42,7 @@ fn render_board(frame: &mut Frame, area: Rect, state: &mut State) {
     }
 
     // render board with black borders
-    let container = Rect {
+    let container_area = Rect {
         x: area.x + (area.width - width) / 2,
         y: area.y + (area.height - height) / 2,
         width,
@@ -53,8 +51,9 @@ fn render_board(frame: &mut Frame, area: Rect, state: &mut State) {
     let container_block = Block::default()
         .borders(Borders::ALL)
         .border_style(Style::new().black());
+    let container_inner = container_block.inner(container_area);
 
-    frame.render_widget(container_block, container);
+    frame.render_widget(container_block, container_area);
 }
 
 fn render_footer(frame: &mut Frame, area: Rect, state: &State) {
