@@ -4,7 +4,7 @@ use ratatui::{
     layout::{Constraint, HorizontalAlignment, Layout, Rect},
     style::{Color, Style},
     text::{Line, Span},
-    widgets::Paragraph,
+    widgets::{Block, Borders, Paragraph},
 };
 
 fn render_header(frame: &mut Frame, area: Rect) {
@@ -30,18 +30,44 @@ fn render_header(frame: &mut Frame, area: Rect) {
     frame.render_widget(paragraph, area);
 }
 
+fn render_board(frame: &mut Frame, area: Rect, state: &mut State) {
+    // terminal cells are roughly 2x taller than wide
+    let mut width = area.width;
+    let mut height = area.height;
+
+    if width > height * 2 {
+        width = height * 2;
+    } else {
+        height = width / 2;
+    }
+
+    // render board with black borders
+    let container = Rect {
+        x: area.x + (area.width - width) / 2,
+        y: area.y + (area.height - height) / 2,
+        width,
+        height,
+    };
+    let container_block = Block::default()
+        .borders(Borders::ALL)
+        .border_style(Style::new().black());
+
+    frame.render_widget(container_block, container);
+}
+
 pub fn render(frame: &mut Frame, state: &mut State) {
     let layout = Layout::default()
         .constraints([
             Constraint::Percentage(25),
-            Constraint::Percentage(70),
-            Constraint::Percentage(5),
+            Constraint::Percentage(65),
+            Constraint::Percentage(10),
         ])
         .split(frame.area());
 
     let header_area = layout[0];
-    let play_area = layout[1];
+    let board_area = layout[1];
     let footer_area = layout[2];
 
     render_header(frame, header_area);
+    render_board(frame, board_area, state);
 }
