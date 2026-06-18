@@ -1,8 +1,10 @@
-use crate::state::{PlayerTurn, State};
+use std::array;
+
+use crate::state::{COL_COUNT, PlayerTurn, ROW_COUNT, State};
 use ratatui::{
     Frame,
     layout::{Constraint, HorizontalAlignment, Layout, Rect},
-    style::{Color, Style, Stylize},
+    style::{Color, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph},
 };
@@ -52,8 +54,16 @@ fn render_board(frame: &mut Frame, area: Rect, state: &mut State) {
         .borders(Borders::ALL)
         .border_style(Style::new().black());
     let container_inner = container_block.inner(container_area);
-
     frame.render_widget(container_block, container_area);
+
+    let rows = Layout::default()
+        .direction(ratatui::layout::Direction::Vertical)
+        .constraints(
+            (0..ROW_COUNT)
+                .map(|_| Constraint::Percentage(100 / ROW_COUNT as u16))
+                .collect::<Vec<_>>(),
+        )
+        .split(container_inner);
 }
 
 fn render_footer(frame: &mut Frame, area: Rect, state: &State) {

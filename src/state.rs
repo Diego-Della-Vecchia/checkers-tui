@@ -1,3 +1,6 @@
+pub const ROW_COUNT: usize = 8;
+pub const COL_COUNT: usize = 8;
+
 #[derive(Debug, Clone, Copy)]
 pub enum PlayerTurn {
     PlayerOne,
@@ -21,14 +24,11 @@ impl Default for State {
     fn default() -> Self {
         let mut fields = [const { Option::None }; 64];
 
-        for row in 0..8 {
-            for col in 0..8 {
-                // Checkers are only placed on dark squares
-                // Dark always lies on:
-                // even x + uneven y or
-                // uneven y + even x
+        for row in 0..ROW_COUNT {
+            for col in 0..COL_COUNT {
+                // black cells appear on even x + odd y or odd x + even y
                 if (row + col) % 2 == 1 {
-                    let index = row * 8 + col;
+                    let index = row * COL_COUNT + col;
 
                     if row < 3 {
                         // Top 3 rows belong to Player Two
