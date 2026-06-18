@@ -1,9 +1,9 @@
-use std::array;
+use std::cell;
 
 use crate::state::{COL_COUNT, PlayerTurn, ROW_COUNT, State};
 use ratatui::{
     Frame,
-    layout::{Constraint, HorizontalAlignment, Layout, Rect},
+    layout::{Constraint, Direction, HorizontalAlignment, Layout, Rect},
     style::{Color, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph},
@@ -33,37 +33,62 @@ fn render_header(frame: &mut Frame, area: Rect) {
 }
 
 fn render_board(frame: &mut Frame, area: Rect, state: &mut State) {
-    // terminal cells are roughly 2x taller than wide
-    let mut width = area.width;
-    let mut height = area.height;
+    // reserve 2 spaces for board borders
+    let max_inner_width = area.width.saturating_sub(2);
+    let max_inner_height = area.height.saturating_sub(2);
 
-    if width > height * 2 {
-        width = height * 2;
+    let max_cell_width = max_inner_width / COL_COUNT as u16;
+    let max_cell_height = max_inner_height / ROW_COUNT as u16;
+
+    // term cells are roughly 2x as wide as they are tall
+    let (cell_width, cell_height) = if max_cell_width < max_cell_height {
+        (max_cell_width * 2, max_cell_width)
     } else {
-        height = width / 2;
-    }
-
-    // render board with black borders
-    let container_area = Rect {
-        x: area.x + (area.width - width) / 2,
-        y: area.y + (area.height - height) / 2,
-        width,
-        height,
+        (max_cell_height * 2, max_cell_height)
     };
+
+    let container_width = cell_width * COL_COUNT as u16;
+    let container_height = cell_height * ROW_COUNT as u16;
+
+    let container_rect = Rect {
+        x: area.x + (area.width - container_width) / 2,
+        y: area.y + (area.height - container_height) / 2,
+        // use +2 to account for the borders of the container block
+        width: container_width + 2,
+        height: container_height + 2,
+    };
+
     let container_block = Block::default()
         .borders(Borders::ALL)
         .border_style(Style::new().black());
-    let container_inner = container_block.inner(container_area);
-    frame.render_widget(container_block, container_area);
+    let container_inner = container_block.inner(container_rect);
 
-    let rows = Layout::default()
-        .direction(ratatui::layout::Direction::Vertical)
-        .constraints(
-            (0..ROW_COUNT)
-                .map(|_| Constraint::Percentage(100 / ROW_COUNT as u16))
-                .collect::<Vec<_>>(),
-        )
+    frame.render_widget(container_block, container_rect);
+
+    let rows_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(vec![Constraint::Length(cell_height); ROW_COUNT])
         .split(container_inner);
+
+    for y in 0..ROW_COUNT {
+        let row_area = rows_layout[y];
+        let cols_layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(vec![Constraint::Length(cell_width); COL_COUNT])
+            .split(row_area);
+
+        for x in 0..COL_COUNT {
+            let col_area = cols_layout[x];
+            let is_black = (x + y) % 2 == 1;
+
+            let cell_block = Block::default().style(if is_black {
+                Style::new().bg(Color::Black)
+            } else {
+                Style::new().bg(Color::White)
+            });
+            frame.render_widget(cell_block, col_area);
+        }
+    }
 }
 
 fn render_footer(frame: &mut Frame, area: Rect, state: &State) {
