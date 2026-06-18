@@ -79,16 +79,20 @@ fn render_board(frame: &mut Frame, area: Rect, state: &mut State) {
 
         for x in 0..COL_COUNT {
             let col_area = cols_layout[x];
-            let is_black = (x + y) % 2 == 1;
-
-            let cell_block = Block::default().style(if is_black {
-                Style::new().bg(Color::Black)
-            } else {
-                Style::new().bg(Color::White)
-            });
-            frame.render_widget(cell_block, col_area);
+            render_cell(frame, col_area, state, x, y);
         }
     }
+}
+
+fn render_cell(frame: &mut Frame, area: Rect, state: &State, x: usize, y: usize) {
+    let is_black = (x + y) % 2 == 1;
+
+    let cell_block = Block::default().style(if is_black {
+        Style::new().bg(Color::DarkGray)
+    } else {
+        Style::new().bg(Color::Gray)
+    });
+    frame.render_widget(cell_block, area);
 }
 
 fn render_footer(frame: &mut Frame, area: Rect, state: &State) {
