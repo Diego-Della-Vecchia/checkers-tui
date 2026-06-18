@@ -17,7 +17,7 @@ pub enum PlayerPiece {
 pub struct State {
     pub fields: [Option<PlayerPiece>; 64],
     pub current_turn: PlayerTurn,
-    pub current_selected_piece: Option<u8>,
+    pub selected_index: Option<u8>,
 }
 
 impl Default for State {
@@ -44,7 +44,7 @@ impl Default for State {
         State {
             fields,
             current_turn: PlayerTurn::PlayerOne,
-            current_selected_piece: Option::None,
+            selected_index: Option::None,
         }
     }
 }

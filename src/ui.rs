@@ -1,4 +1,4 @@
-use std::cell;
+use std::vec;
 
 use crate::state::{COL_COUNT, PlayerTurn, ROW_COUNT, State};
 use ratatui::{
@@ -26,7 +26,7 @@ fn render_header(frame: &mut Frame, area: Rect) {
         .collect();
 
     let paragraph = Paragraph::new(text)
-        .style(Style::default().fg(Color::Red))
+        .style(Style::default().fg(Color::White))
         .alignment(HorizontalAlignment::Center);
 
     frame.render_widget(paragraph, area);
@@ -86,23 +86,44 @@ fn render_board(frame: &mut Frame, area: Rect, state: &mut State) {
 
 fn render_cell(frame: &mut Frame, area: Rect, state: &State, x: usize, y: usize) {
     let is_black = (x + y) % 2 == 1;
+    let index = y * COL_COUNT + x;
 
     let cell_block = Block::default().style(if is_black {
         Style::new().bg(Color::DarkGray)
     } else {
         Style::new().bg(Color::Gray)
     });
+
+    let cell_inner = cell_block.inner(area);
+
     frame.render_widget(cell_block, area);
+
+    if let Some(piece) = state.fields[index] {
+        let piece_block = Block::default().style(Style::new().bg(match piece {
+            crate::state::PlayerPiece::PlayerOnePiece => Color::Red,
+            crate::state::PlayerPiece::PlayerTwoPiece => Color::Blue,
+        }));
+        frame.render_widget(piece_block, cell_inner);
+    }
 }
 
 fn render_footer(frame: &mut Frame, area: Rect, state: &State) {
-    let text = match state.current_turn {
-        PlayerTurn::PlayerOne => String::from("Current turn: Player one"),
-        PlayerTurn::PlayerTwo => String::from("Current turn: Player two"),
-    };
+    let line = Line::from(vec![
+        Span::raw("Current turn: "),
+        Span::styled(
+            match state.current_turn {
+                PlayerTurn::PlayerOne => "Player one",
+                PlayerTurn::PlayerTwo => "Player two",
+            },
+            match state.current_turn {
+                PlayerTurn::PlayerOne => Style::new().fg(Color::Red),
+                PlayerTurn::PlayerTwo => Style::new().fg(Color::Blue),
+            },
+        ),
+    ]);
 
-    let paragraph = Paragraph::new(text)
-        .style(Style::new().red())
+    let paragraph = Paragraph::new(line)
+        .style(Style::new().fg(Color::White))
         .alignment(HorizontalAlignment::Center);
 
     frame.render_widget(paragraph, area);
