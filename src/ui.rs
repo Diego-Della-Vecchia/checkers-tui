@@ -3,7 +3,7 @@ use std::vec;
 use crate::state::{COL_COUNT, PlayerTurn, ROW_COUNT, State};
 use ratatui::{
     Frame,
-    layout::{Constraint, Direction, HorizontalAlignment, Layout, Rect},
+    layout::{Alignment, Constraint, Direction, HorizontalAlignment, Layout, Rect},
     style::{Color, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph},
@@ -99,16 +99,27 @@ fn render_cell(frame: &mut Frame, area: Rect, state: &State, x: usize, y: usize)
     frame.render_widget(cell_block, area);
 
     if let Some(piece) = state.fields[index] {
-        let piece_block = Block::default().style(Style::new().bg(match piece {
-            crate::state::PlayerPiece::PlayerOnePiece => Color::Red,
-            crate::state::PlayerPiece::PlayerTwoPiece => Color::Blue,
-        }));
-        frame.render_widget(piece_block, cell_inner);
+        let piece_char = Paragraph::new(match piece {
+            crate::state::PlayerPiece::PlayerOnePiece => "●",
+            crate::state::PlayerPiece::PlayerTwoPiece => "○",
+        })
+        .style(match piece {
+            crate::state::PlayerPiece::PlayerOnePiece => Style::new().fg(Color::Red),
+            crate::state::PlayerPiece::PlayerTwoPiece => Style::new().fg(Color::Blue),
+        })
+        .alignment(Alignment::Center);
+
+        frame.render_widget(piece_char, cell_inner);
     }
 }
 
 fn render_footer(frame: &mut Frame, area: Rect, state: &State) {
-    let line = Line::from(vec![
+    let layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Ratio(1, 1); 2])
+        .split(area);
+
+    let turn_line = Line::from(vec![
         Span::raw("Current turn: "),
         Span::styled(
             match state.current_turn {
@@ -122,11 +133,20 @@ fn render_footer(frame: &mut Frame, area: Rect, state: &State) {
         ),
     ]);
 
-    let paragraph = Paragraph::new(line)
-        .style(Style::new().fg(Color::White))
-        .alignment(HorizontalAlignment::Center);
+    let turn_paragraph = Paragraph::new(turn_line).alignment(HorizontalAlignment::Center);
 
-    frame.render_widget(paragraph, area);
+    let legend_line = Line::from(vec![
+        Span::raw("Legend: "),
+        Span::styled("●", Style::new().fg(Color::Red)),
+        Span::raw(" Player one, "),
+        Span::styled("○", Style::new().fg(Color::Blue)),
+        Span::raw(" Player two"),
+    ]);
+
+    let legend_paragraph = Paragraph::new(legend_line).alignment(HorizontalAlignment::Center);
+
+    frame.render_widget(turn_paragraph, layout[0]);
+    frame.render_widget(legend_paragraph, layout[1]);
 }
 
 pub fn render(frame: &mut Frame, state: &mut State) {
