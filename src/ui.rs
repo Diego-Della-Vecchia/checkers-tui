@@ -1,5 +1,3 @@
-use std::vec;
-
 use crate::state::{COL_COUNT, PlayerTurn, ROW_COUNT, State};
 use ratatui::{
     Frame,
@@ -8,6 +6,8 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph},
 };
+use std::rc::Rc;
+use std::vec;
 
 fn render_header(frame: &mut Frame, area: Rect) {
     let art = r"
@@ -61,6 +61,16 @@ fn board_layout(board_area: Rect) -> (Rect, Rect, u16, u16) {
     let container_inner = container_block.inner(container_rect);
 
     (container_rect, container_inner, cell_width, cell_height)
+}
+
+fn main_layout(area: Rect) -> Rc<[Rect]> {
+    Layout::default()
+        .constraints([
+            Constraint::Percentage(25),
+            Constraint::Percentage(65),
+            Constraint::Percentage(10),
+        ])
+        .split(area)
 }
 
 fn render_board(frame: &mut Frame, area: Rect, state: &mut State) {
@@ -128,14 +138,9 @@ fn render_cell(frame: &mut Frame, area: Rect, state: &State, x: usize, y: usize)
     }
 }
 
-pub fn cell_index_at(frame_area: Rect, x: u16, y: u16) -> Option<u8> {
-    let layout = Layout::default()
-        .constraints([
-            Constraint::Percentage(25),
-            Constraint::Percentage(65),
-            Constraint::Percentage(10),
-        ])
-        .split(frame_area);
+pub fn cell_index_at(area: Rect, x: u16, y: u16) -> Option<u8> {
+    let layout = main_layout(area);
+
     let board_area = layout[1];
 
     let (_, container_inner, cell_width, cell_height) = board_layout(board_area);
@@ -163,10 +168,7 @@ pub fn cell_index_at(frame_area: Rect, x: u16, y: u16) -> Option<u8> {
 }
 
 fn render_footer(frame: &mut Frame, area: Rect, state: &State) {
-    let layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Ratio(1, 1); 2])
-        .split(area);
+    let layout = main_layout(area);
 
     let turn_line = Line::from(vec![
         Span::raw("Current turn: "),
