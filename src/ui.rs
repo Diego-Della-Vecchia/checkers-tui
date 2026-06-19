@@ -32,15 +32,14 @@ fn render_header(frame: &mut Frame, area: Rect) {
     frame.render_widget(paragraph, area);
 }
 
-fn render_board(frame: &mut Frame, area: Rect, state: &mut State) {
-    // reserve 2 spaces for board borders
-    let max_inner_width = area.width.saturating_sub(2);
-    let max_inner_height = area.height.saturating_sub(2);
+fn board_layout(board_area: Rect) -> (Rect, Rect, u16, u16) {
+    let max_inner_width = board_area.width.saturating_sub(2);
+    let max_inner_height = board_area.height.saturating_sub(2);
 
     let max_cell_width = max_inner_width / COL_COUNT as u16;
     let max_cell_height = max_inner_height / ROW_COUNT as u16;
 
-    // term cells are roughly 2x as wide as they are tall
+    // Terminal cells are roughly 2x as wide as they are tall.
     let (cell_width, cell_height) = if max_cell_width < max_cell_height {
         (max_cell_width * 2, max_cell_width)
     } else {
@@ -51,17 +50,25 @@ fn render_board(frame: &mut Frame, area: Rect, state: &mut State) {
     let container_height = cell_height * ROW_COUNT as u16;
 
     let container_rect = Rect {
-        x: area.x + (area.width - container_width) / 2,
-        y: area.y + (area.height - container_height) / 2,
-        // use +2 to account for the borders of the container block
+        x: board_area.x + (board_area.width - container_width) / 2,
+        y: board_area.y + (board_area.height - container_height) / 2,
+        // +2 accounts for the borders of the container block.
         width: container_width + 2,
         height: container_height + 2,
     };
 
+    let container_block = Block::default().borders(Borders::ALL);
+    let container_inner = container_block.inner(container_rect);
+
+    (container_rect, container_inner, cell_width, cell_height)
+}
+
+fn render_board(frame: &mut Frame, area: Rect, state: &mut State) {
+    let (container_rect, container_inner, cell_width, cell_height) = board_layout(area);
+
     let container_block = Block::default()
         .borders(Borders::ALL)
         .border_style(Style::new().black());
-    let container_inner = container_block.inner(container_rect);
 
     frame.render_widget(container_block, container_rect);
 
@@ -87,12 +94,20 @@ fn render_board(frame: &mut Frame, area: Rect, state: &mut State) {
 fn render_cell(frame: &mut Frame, area: Rect, state: &State, x: usize, y: usize) {
     let is_black = (x + y) % 2 == 1;
     let index = y * COL_COUNT + x;
+    let is_selected = state.selected_index == Some(index as u8);
 
-    let cell_block = Block::default().style(if is_black {
-        Style::new().bg(Color::DarkGray)
-    } else {
-        Style::new().bg(Color::Gray)
-    });
+    let cell_block = Block::default()
+        .style(if is_black {
+            Style::new().bg(Color::DarkGray)
+        } else {
+            Style::new().bg(Color::Gray)
+        })
+        .borders(if is_selected {
+            Borders::ALL
+        } else {
+            Borders::NONE
+        })
+        .border_style(Style::new().fg(Color::Yellow));
 
     let cell_inner = cell_block.inner(area);
 
@@ -111,6 +126,40 @@ fn render_cell(frame: &mut Frame, area: Rect, state: &State, x: usize, y: usize)
 
         frame.render_widget(piece_char, cell_inner);
     }
+}
+
+pub fn cell_index_at(frame_area: Rect, x: u16, y: u16) -> Option<u8> {
+    let layout = Layout::default()
+        .constraints([
+            Constraint::Percentage(25),
+            Constraint::Percentage(65),
+            Constraint::Percentage(10),
+        ])
+        .split(frame_area);
+    let board_area = layout[1];
+
+    let (_, container_inner, cell_width, cell_height) = board_layout(board_area);
+
+    // Ignore clicks on the container border.
+    if x < container_inner.x
+        || x >= container_inner.x + container_inner.width
+        || y < container_inner.y
+        || y >= container_inner.y + container_inner.height
+    {
+        return None;
+    }
+
+    let rel_x = x - container_inner.x;
+    let rel_y = y - container_inner.y;
+
+    let col = (rel_x / cell_width) as usize;
+    let row = (rel_y / cell_height) as usize;
+
+    if col >= COL_COUNT || row >= ROW_COUNT {
+        return None;
+    }
+
+    Some((row * COL_COUNT + col) as u8)
 }
 
 fn render_footer(frame: &mut Frame, area: Rect, state: &State) {
